@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Analytics &mdash; Gym Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Reports &amp; Analytics</h2>
+        <p class="page-subtitle">Statistical summaries and analytical insights generated using Pandas.</p>
+    </div>
+    <div class="header-actions-group">
+        <a href="{{ url_for('export_members_csv') }}" class="btn btn-secondary" title="Download members list as CSV">&#128190; Export Members (CSV)</a>
+        <a href="{{ url_for('export_attendance_csv') }}" class="btn btn-secondary" title="Download attendance history as CSV">&#128190; Export Attendance (CSV)</a>
+    </div>
+</div>
+
+<!-- Section A: Membership Summary -->
+<section class="card">
+    <div class="card-header-bar">
+        <h3 class="section-title">Membership Summary</h3>
+        <p class="section-desc">Overall member volume and status distribution based on dynamic membership validation.</p>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-box">
+            <span class="stat-label">Total Members</span>
+            <span class="stat-value">{{ summary.total_members }}</span>
+            <span class="stat-subtext">All registered accounts</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">Active Members</span>
+            <span class="stat-value text-success">{{ summary.active_count }}</span>
+            <span class="stat-subtext">Valid membership</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">Expired Members</span>
+            <span class="stat-value text-danger">{{ summary.expired_count }}</span>
+            <span class="stat-subtext">Period lapsed</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">Inactive Members</span>
+            <span class="stat-value text-muted">{{ summary.inactive_count }}</span>
+            <span class="stat-subtext">Manually deactivated</span>
+        </div>
+    </div>
+</section>
+
+<!-- Section B: Membership Plan Distribution -->
+<section class="card">
+    <div class="card-header-bar">
+        <h3 class="section-title">Plan Distribution</h3>
+        <p class="section-desc">Enrollment counts and relative percentage share across all four membership plans.</p>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Plan</th>
+                    <th>Duration</th>
+                    <th>Fee</th>
+                    <th>Members Enrolled</th>
+                    <th>Share (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in plans_distribution %}
+                    <tr>
+                        <td><strong>{{ p.name }}</strong></td>
+                        <td>{{ p.duration_months }} Month{% if p.duration_months > 1 %}s{% endif %}</td>
+                        <td>&#8377;{{ "{:,}".format(p.fee) }}</td>
+                        <td><strong>{{ p.member_count }}</strong> member{% if p.member_count != 1 %}s{% endif %}</td>
+                        <td>
+                            <span class="badge badge-neutral">{{ p.percentage }}%</span>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- Section C: Attendance Analysis -->
+<section class="card">
+    <div class="card-header-bar">
+        <h3 class="section-title">Attendance Analysis</h3>
+        <p class="section-desc">Key activity indicators and daily visit metrics calculated using Pandas.</p>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-box">
+            <span class="stat-label">Total Visits</span>
+            <span class="stat-value">{{ attendance.total_visits }}</span>
+            <span class="stat-subtext">Cumulative check-ins</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">Active Days</span>
+            <span class="stat-value">{{ attendance.unique_days }}</span>
+            <span class="stat-subtext">Days with recorded visits</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">Avg. Visits / Day</span>
+            <span class="stat-value">{{ attendance.avg_per_recorded_day }}</span>
+            <span class="stat-subtext">Per recorded attendance day</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">Busiest Weekday</span>
+            <span class="stat-value stat-value-text">{{ attendance.busiest_weekday }}</span>
+            <span class="stat-subtext">{% if attendance.total_visits > 0 %}{{ attendance.busiest_weekday_count }} check-ins recorded{% else %}No data{% endif %}</span>
+        </div>
+    </div>
+
+    <div class="card-sub-header">
+        <h4 class="sub-section-title">Daily Attendance Breakdown</h4>
+    </div>
+    {% if attendance.daily_counts %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Day of Week</th>
+                        <th>Visits Recorded</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in attendance.daily_counts %}
+                        <tr>
+                            <td>{{ d.date }}</td>
+                            <td><strong>{{ d.weekday_name }}</strong></td>
+                            <td>{{ d.visit_count }} visit{% if d.visit_count != 1 %}s{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty-state-p">No attendance records have been recorded yet.</p>
+    {% endif %}
+</section>
+
+<!-- Section D: Membership Expiry Analysis -->
+<section class="card">
+    <div class="card-header-bar">
+        <h3 class="section-title">Membership Expiry Analysis</h3>
+        <p class="section-desc">Monitoring upcoming expirations and lapsed accounts (excluding manually inactive members).</p>
+    </div>
+
+    <!-- Sub-section: Expiring Soon -->
+    <div class="card-sub-header">
+        <h4 class="sub-section-title">Upcoming Expiries (Next 7 Days) &mdash; {{ expiry.upcoming_count }}</h4>
+    </div>
+    {% if expiry.upcoming_expiries %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Member Name</th>
+                        <th>Phone</th>
+                        <th>Current Plan</th>
+                        <th>Expiry Date</th>
+                        <th>Remaining Days</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in expiry.upcoming_expiries %}
+                        <tr>
+                            <td><strong>{{ m.name }}</strong></td>
+                            <td>{{ m.phone }}</td>
+                            <td>{{ m.plan_name }}</td>
+                            <td>{{ m.end_date }}</td>
+                            <td>
+                                <span class="badge badge-warning">
+                                    {% if m.days_remaining == 0 %}
+                                        Expires today
+                                    {% elif m.days_remaining == 1 %}
+                                        1 day left
+                                    {% else %}
+                                        {{ m.days_remaining }} days left
+                                    {% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty-state-p">No memberships are expiring within the next 7 days.</p>
+    {% endif %}
+
+    <!-- Sub-section: Already Expired -->
+    <div class="card-sub-header">
+        <h4 class="sub-section-title">Already Expired Memberships &mdash; {{ expiry.expired_count }}</h4>
+    </div>
+    {% if expiry.expired_members %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Member Name</th>
+                        <th>Phone</th>
+                        <th>Current Plan</th>
+                        <th>Expiry Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in expiry.expired_members %}
+                        <tr>
+                            <td><strong>{{ m.name }}</strong></td>
+                            <td>{{ m.phone }}</td>
+                            <td>{{ m.plan_name }}</td>
+                            <td>{{ m.end_date }}</td>
+                            <td>
+                                <span class="badge badge-expired">Expired</span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty-state-p">No expired memberships found.</p>
+    {% endif %}
+</section>
+{% endblock %}

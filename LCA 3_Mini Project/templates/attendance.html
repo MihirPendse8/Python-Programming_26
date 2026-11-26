@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance &mdash; Gym Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Attendance Tracking</h2>
+        <p class="page-subtitle">Record daily check-ins and monitor member attendance records.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('member_attendance') }}" class="btn btn-secondary">&#128197; Member Monthly Calendar</a>
+    </div>
+</div>
+
+<!-- Section A: Daily Check-in -->
+<section class="card">
+    <div class="card-header-bar">
+        <h3 class="section-title">Mark Today's Attendance</h3>
+        <p class="section-desc">Select an active member to record their gym visit for today. Each member can check in once per day.</p>
+    </div>
+    <div class="checkin-container">
+        {% if eligible_members %}
+            <form method="POST" action="{{ url_for('check_in_attendance') }}" class="checkin-form">
+                <div class="checkin-form-row">
+                    <div class="form-group checkin-select-group">
+                        <label for="member_id" class="form-label">Eligible Member <span class="required">*</span></label>
+                        <select id="member_id" name="member_id" class="form-control" required>
+                            <option value="">-- Choose an active member --</option>
+                            {% for m in eligible_members %}
+                                <option value="{{ m.id }}">
+                                    #{{ m.id }} &mdash; {{ m.name }} ({{ m.plan_name }} &bull; {{ m.phone }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="checkin-btn-group">
+                        <button type="submit" class="btn btn-primary checkin-btn">&#10003; Mark Attendance</button>
+                    </div>
+                </div>
+            </form>
+        {% else %}
+            <div class="info-callout">
+                <p>All active members have already checked in for today, or no active memberships are currently available.</p>
+            </div>
+        {% endif %}
+        <p class="form-hint arrival-hint">Note: The system records arrival time only. Checkout time and visit duration are not tracked in this version.</p>
+    </div>
+</section>
+
+<!-- Section B: Attendance History -->
+<section class="card">
+    <div class="card-header-flex">
+        <div>
+            <h3 class="section-title">Attendance History</h3>
+            <div class="prominent-date-wrap">
+                <span class="prominent-date">{{ selected_date_display }}</span>
+                {% if selected_date == today %}
+                    <span class="badge badge-active">Today</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="date-controls-flex">
+            <form method="GET" action="{{ url_for('attendance') }}" class="date-filter-form" id="dateFilterForm">
+                <label for="date" class="date-filter-label">Jump to Date:</label>
+                <input 
+                    type="date" 
+                    id="date" 
+                    name="date" 
+                    value="{{ selected_date }}" 
+                    class="form-control form-control-sm"
+                    onchange="this.form.submit()"
+                    required
+                >
+                <noscript><button type="submit" class="btn btn-sm btn-secondary">Go</button></noscript>
+            </form>
+            <div class="day-nav-group">
+                <a href="{{ url_for('attendance', date=prev_date) }}" class="btn btn-sm btn-secondary" title="View previous day">&larr; Previous Day</a>
+                {% if selected_date != today %}
+                    <a href="{{ url_for('attendance', date=today) }}" class="btn btn-sm btn-secondary">Today</a>
+                {% endif %}
+                <a href="{{ url_for('attendance', date=next_date) }}" class="btn btn-sm btn-secondary" title="View next day">Next Day &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    {% if attendance_records %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Check-in Time</th>
+                        <th>Member ID</th>
+                        <th>Member Name</th>
+                        <th>Phone Number</th>
+                        <th class="text-right">History</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in attendance_records %}
+                        <tr>
+                            <td>{{ r.date }}</td>
+                            <td><strong>{{ r.check_in_time }}</strong></td>
+                            <td>#{{ r.member_id }}</td>
+                            <td><strong>{{ r.name }}</strong></td>
+                            <td>{{ r.phone }}</td>
+                            <td class="text-right actions-cell">
+                                <a href="{{ url_for('member_attendance', member_id=r.member_id) }}" class="btn-action" title="View monthly attendance calendar for {{ r.name }}">Calendar</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty-state-p">No attendance records found for {{ selected_date_display }}.</p>
+    {% endif %}
+</section>
+{% endblock %}

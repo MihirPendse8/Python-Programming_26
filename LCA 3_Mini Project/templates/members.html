@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Members &mdash; Gym Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Member Directory</h2>
+        <p class="page-subtitle">Manage gym members, search records, and monitor membership statuses.</p>
+    </div>
+    <a href="{{ url_for('add_member') }}" class="btn btn-primary">+ Add Member</a>
+</div>
+
+<!-- Search and Filter Bar -->
+<section class="card filter-card">
+    <form method="GET" action="{{ url_for('members') }}" class="filter-form">
+        <div class="filter-group">
+            <label for="search" class="filter-label">Search</label>
+            <input 
+                type="text" 
+                id="search" 
+                name="search" 
+                value="{{ search_query or '' }}" 
+                placeholder="Search name or phone..." 
+                class="form-control"
+            >
+        </div>
+
+        <div class="filter-group">
+            <label for="plan" class="filter-label">Plan</label>
+            <select id="plan" name="plan" class="form-control">
+                <option value="">All Plans</option>
+                {% for p in plans %}
+                    <option value="{{ p.id }}" {% if selected_plan == p.id|string %}selected{% endif %}>
+                        {{ p.name }} ({{ p.duration_months }}m)
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="status" class="filter-label">Status</label>
+            <select id="status" name="status" class="form-control">
+                <option value="">All Statuses</option>
+                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                <option value="expired" {% if selected_status == 'expired' %}selected{% endif %}>Expired</option>
+                <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-secondary">Filter</button>
+            {% if search_query or selected_plan or selected_status %}
+                <a href="{{ url_for('members') }}" class="btn-link">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+</section>
+
+<!-- Members Table -->
+<section class="card table-card">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Gender</th>
+                    <th>Plan</th>
+                    <th>Start Date</th>
+                    <th>Expiry Date</th>
+                    <th>Status</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if members %}
+                    {% for m in members %}
+                        <tr>
+                            <td>#{{ m.id }}</td>
+                            <td>
+                                <strong>{{ m.name }}</strong>
+                                {% if m.email %}
+                                    <div class="table-subtext">{{ m.email }}</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ m.phone }}</td>
+                            <td>{{ m.gender }}</td>
+                            <td>{{ m.plan_name }}</td>
+                            <td>{{ m.start_date }}</td>
+                            <td>{{ m.end_date }}</td>
+                            <td>
+                                <span class="badge badge-{{ m.status|lower }}">{{ m.status }}</span>
+                            </td>
+                            <td class="text-right actions-cell">
+                                <a href="{{ url_for('edit_member', member_id=m.id) }}" class="btn-action">Edit</a>
+                                <form method="POST" action="{{ url_for('toggle_member', member_id=m.id) }}" class="inline-form">
+                                    {% if m.is_active == 1 %}
+                                        <button 
+                                            type="submit" 
+                                            class="btn-action btn-action-danger" 
+                                            onclick="return confirm('Are you sure you want to deactivate {{ m.name }}?');"
+                                        >
+                                            Deactivate
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="btn-action btn-action-success">
+                                            Reactivate
+                                        </button>
+                                    {% endif %}
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="9" class="empty-state-cell">
+                            No members found matching your search or filter criteria.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

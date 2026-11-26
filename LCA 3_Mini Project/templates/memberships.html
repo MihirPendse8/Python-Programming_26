@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Memberships &mdash; Gym Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Membership Management</h2>
+        <p class="page-subtitle">Monitor plan offerings, track upcoming expiries, and process membership renewals.</p>
+    </div>
+</div>
+
+<!-- Section 1: Fixed Membership Plans -->
+<section class="card">
+    <div class="card-header-bar">
+        <h3 class="section-title">Membership Plans</h3>
+        <p class="section-desc">Fixed duration plans offered by the gym. All fees are in Indian Rupees (&#8377;).</p>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Plan</th>
+                    <th>Duration</th>
+                    <th>Fee</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in plans %}
+                    <tr>
+                        <td><strong>{{ p.name }}</strong></td>
+                        <td>{{ p.duration_months }} Month{% if p.duration_months > 1 %}s{% endif %}</td>
+                        <td>&#8377;{{ "{:,}".format(p.fee) }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- Section 2: Expiring Soon (Next 7 Days) -->
+<section class="card">
+    <div class="card-header-bar">
+        <h3 class="section-title">Expiring Soon (Next 7 Days)</h3>
+        <p class="section-desc">Active members whose membership expires between today and the next 7 days, inclusive.</p>
+    </div>
+    {% if expiring_soon %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Member Name</th>
+                        <th>Phone</th>
+                        <th>Current Plan</th>
+                        <th>Expiry Date</th>
+                        <th>Remaining Days</th>
+                        <th class="text-right">Renew Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in expiring_soon %}
+                        <tr>
+                            <td><strong>{{ m.name }}</strong></td>
+                            <td>{{ m.phone }}</td>
+                            <td>{{ m.plan_name }}</td>
+                            <td>{{ m.end_date }}</td>
+                            <td>
+                                <span class="badge badge-warning">
+                                    {% if m.days_remaining == 0 %}
+                                        Expires today
+                                    {% elif m.days_remaining == 1 %}
+                                        1 day left
+                                    {% else %}
+                                        {{ m.days_remaining }} days left
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td class="text-right actions-cell">
+                                <form method="POST" action="{{ url_for('renew_membership', member_id=m.id) }}" class="inline-renew-form">
+                                    <select name="plan_id" class="form-control form-control-sm" required aria-label="Select renewal plan for {{ m.name }}">
+                                        {% for p in plans %}
+                                            <option value="{{ p.id }}" {% if m.plan_id == p.id %}selected{% endif %}>
+                                                {{ p.name }} ({{ p.duration_months }}m &bull; &#8377;{{ p.fee }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-primary">Renew</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty-state-p">No memberships are expiring within the next 7 days.</p>
+    {% endif %}
+</section>
+
+<!-- Section 3: Expired Memberships -->
+<section class="card">
+    <div class="card-header-bar">
+        <h3 class="section-title">Expired Memberships</h3>
+        <p class="section-desc">Members whose membership has already expired and need renewal to resume access.</p>
+    </div>
+    {% if expired_members %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Member Name</th>
+                        <th>Phone</th>
+                        <th>Current Plan</th>
+                        <th>Expiry Date</th>
+                        <th class="text-right">Renew Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in expired_members %}
+                        <tr>
+                            <td><strong>{{ m.name }}</strong></td>
+                            <td>{{ m.phone }}</td>
+                            <td>{{ m.plan_name }}</td>
+                            <td>
+                                <span class="badge badge-expired">{{ m.end_date }}</span>
+                            </td>
+                            <td class="text-right actions-cell">
+                                <form method="POST" action="{{ url_for('renew_membership', member_id=m.id) }}" class="inline-renew-form">
+                                    <select name="plan_id" class="form-control form-control-sm" required aria-label="Select renewal plan for {{ m.name }}">
+                                        {% for p in plans %}
+                                            <option value="{{ p.id }}" {% if m.plan_id == p.id %}selected{% endif %}>
+                                                {{ p.name }} ({{ p.duration_months }}m &bull; &#8377;{{ p.fee }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-primary">Renew</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty-state-p">No expired memberships found.</p>
+    {% endif %}
+</section>
+{% endblock %}

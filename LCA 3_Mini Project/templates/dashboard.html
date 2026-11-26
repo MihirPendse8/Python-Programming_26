@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard &mdash; Gym Management System{% endblock %}
+
+{% block content %}
+<!-- Modern Fitness Hero Banner -->
+<section class="fitness-hero">
+    <div class="hero-left">
+        <div class="hero-badge">
+            <span class="live-pulse"></span>
+            <span>Gym Facility Live &bull; Daily Operations</span>
+        </div>
+        <h1 class="hero-title">IronCore Fitness Hub</h1>
+        <p class="hero-subtitle">Streamlined management of member athletic journeys, floor check-ins, and club analytics.</p>
+        <div class="hero-meta">
+            <span class="meta-item">&#128197; {{ today_date }}</span>
+            <span class="meta-separator">&bull;</span>
+            <span class="meta-item">&#9889; Digital Management Active</span>
+        </div>
+    </div>
+    <div class="hero-quick-cta">
+        <a href="{{ url_for('attendance') }}" class="btn btn-primary cta-btn">
+            <span class="btn-icon">&#9201;</span>
+            <span>Check In Member</span>
+        </a>
+        <a href="{{ url_for('add_member') }}" class="btn btn-secondary cta-btn">
+            <span class="btn-icon">&#10010;</span>
+            <span>New Registration</span>
+        </a>
+    </div>
+</section>
+
+<!-- Live Pulse Metrics -->
+<section class="card">
+    <div class="card-header-bar">
+        <h3 class="section-title">Club Operational Pulse</h3>
+        <p class="section-desc">Real-time counts for floor traffic, valid athlete passes, and subscription lifecycles.</p>
+    </div>
+    <div class="stats-grid fitness-stats-grid">
+        <div class="stat-box fitness-stat-card">
+            <div class="stat-card-head">
+                <span class="stat-label">Active Members</span>
+                <span class="metric-icon metric-icon-success">&#127947;</span>
+            </div>
+            <span class="stat-value text-success">{{ stats.active_members }}</span>
+            <span class="stat-subtext">Athletes with valid passes</span>
+        </div>
+
+        <div class="stat-box fitness-stat-card">
+            <div class="stat-card-head">
+                <span class="stat-label">Today's Check-ins</span>
+                <span class="metric-icon metric-icon-accent">&#9201;</span>
+            </div>
+            <span class="stat-value">{{ stats.today_attendance }}</span>
+            <span class="stat-subtext">Workouts logged today</span>
+        </div>
+
+        <div class="stat-box fitness-stat-card">
+            <div class="stat-card-head">
+                <span class="stat-label">Expiring Soon</span>
+                <span class="metric-icon metric-icon-warning">&#9888;</span>
+            </div>
+            <span class="stat-value text-warning">{{ stats.upcoming_expiries|length }}</span>
+            <span class="stat-subtext">Next 7 days renewal window</span>
+        </div>
+
+        <div class="stat-box fitness-stat-card">
+            <div class="stat-card-head">
+                <span class="stat-label">Total Registered</span>
+                <span class="metric-icon metric-icon-neutral">&#128101;</span>
+            </div>
+            <span class="stat-value">{{ stats.total_members }}</span>
+            <span class="stat-subtext">All enrolled members</span>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Action Operations Cards -->
+<section class="quick-ops-section">
+    <div class="quick-ops-grid">
+        <a href="{{ url_for('members') }}" class="quick-op-card">
+            <div class="op-icon-wrap op-blue">&#128100;</div>
+            <div class="op-content">
+                <h4 class="op-title">Member Directory</h4>
+                <p class="op-desc">Browse profiles, search athletes, review plans, and manage contact records.</p>
+            </div>
+            <span class="op-arrow">&rarr;</span>
+        </a>
+
+        <a href="{{ url_for('attendance') }}" class="quick-op-card">
+            <div class="op-icon-wrap op-green">&#9989;</div>
+            <div class="op-content">
+                <h4 class="op-title">Daily Attendance Desk</h4>
+                <p class="op-desc">Log arriving gym-goers, view hourly check-in roster, and inspect visit stamps.</p>
+            </div>
+            <span class="op-arrow">&rarr;</span>
+        </a>
+
+        <a href="{{ url_for('memberships') }}" class="quick-op-card">
+            <div class="op-icon-wrap op-amber">&#128179;</div>
+            <div class="op-content">
+                <h4 class="op-title">Subscriptions &amp; Plans</h4>
+                <p class="op-desc">Manage Monthly, Quarterly, Half-Yearly, and Annual rates or process renewals.</p>
+            </div>
+            <span class="op-arrow">&rarr;</span>
+        </a>
+
+        <a href="{{ url_for('reports') }}" class="quick-op-card">
+            <div class="op-icon-wrap op-purple">&#128202;</div>
+            <div class="op-content">
+                <h4 class="op-title">Pandas Reports &amp; Analytics</h4>
+                <p class="op-desc">Analyze membership retention, busiest workout days, and export verified CSVs.</p>
+            </div>
+            <span class="op-arrow">&rarr;</span>
+        </a>
+    </div>
+</section>
+
+<!-- Upcoming Expiries Action Desk -->
+<section class="card">
+    <div class="card-header-bar">
+        <div class="card-header-flex" style="padding: 0; border: none;">
+            <div>
+                <h3 class="section-title">Memberships Expiring Soon (Next 7 Days)</h3>
+                <p class="section-desc">Active members who need renewal within the upcoming week.</p>
+            </div>
+            <a href="{{ url_for('memberships') }}" class="btn btn-sm btn-secondary">View All Memberships</a>
+        </div>
+    </div>
+
+    {% if stats.upcoming_expiries %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Athlete</th>
+                        <th>Phone</th>
+                        <th>Current Plan</th>
+                        <th>Expiry Date</th>
+                        <th class="text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in stats.upcoming_expiries %}
+                        <tr>
+                            <td>
+                                <strong>{{ m.name }}</strong>
+                            </td>
+                            <td>{{ m.phone }}</td>
+                            <td>
+                                <span class="badge badge-warning">{{ m.plan_name }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ m.end_date }}</strong>
+                            </td>
+                            <td class="text-right">
+                                <a href="{{ url_for('memberships') }}" class="btn btn-sm btn-primary">Renew Plan</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="empty-state-p">&#10004; All active athlete passes are valid beyond the next 7 days. No immediate renewals needed.</p>
+    {% endif %}
+</section>
+{% endblock %}

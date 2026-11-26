@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gym Management System{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        // Anti-flicker script: immediately set theme before body rendering
+        (function() {
+            try {
+                var savedTheme = localStorage.getItem('gym_theme');
+                if (savedTheme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch (e) {
+                // Ignore localStorage errors if cookies/storage disabled
+            }
+        })();
+    </script>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <a href="{{ url_for('dashboard') }}" class="logo">Gym Management System</a>
+                <span class="tagline">College Project Demonstration</span>
+            </div>
+            <div class="header-controls">
+                <nav class="main-nav">
+                    <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">Dashboard</a>
+                    <a href="{{ url_for('members') }}" class="nav-link {% if request.endpoint in ['members', 'add_member', 'edit_member'] %}active{% endif %}">Members</a>
+                    <a href="{{ url_for('memberships') }}" class="nav-link {% if request.endpoint in ['memberships', 'renew_membership'] %}active{% endif %}">Memberships</a>
+                    <a href="{{ url_for('attendance') }}" class="nav-link {% if request.endpoint in ['attendance', 'check_in_attendance', 'member_attendance'] %}active{% endif %}">Attendance</a>
+                    <a href="{{ url_for('reports') }}" class="nav-link {% if request.endpoint in ['reports', 'export_members_csv', 'export_attendance_csv'] %}active{% endif %}">Reports</a>
+                </nav>
+                <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
+                    <span class="theme-icon" aria-hidden="true">🌙</span>
+                    <span class="theme-label">Dark</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="content-container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-container">
+                        {% for category, message in messages %}
+                            <div class="flash-alert flash-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <div class="footer-container">
+            <p>&copy; 2026 Gym Management System &mdash; Built with Python, Flask &amp; SQLite</p>
+        </div>
+    </footer>
+
+    <script>
+        // Theme toggle logic with localStorage persistence
+        (function() {
+            var toggleBtn = document.getElementById('themeToggleBtn');
+            if (!toggleBtn) return;
+
+            var themeIcon = toggleBtn.querySelector('.theme-icon');
+            var themeLabel = toggleBtn.querySelector('.theme-label');
+
+            function syncButtonState(isDark) {
+                if (themeIcon) {
+                    themeIcon.textContent = isDark ? '☀️' : '🌙';
+                }
+                if (themeLabel) {
+                    themeLabel.textContent = isDark ? 'Light' : 'Dark';
+                }
+                var labelText = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+                toggleBtn.setAttribute('title', labelText);
+                toggleBtn.setAttribute('aria-label', labelText);
+            }
+
+            // Sync button label on initial load
+            var isCurrentDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            syncButtonState(isCurrentDark);
+
+            toggleBtn.addEventListener('click', function() {
+                var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                if (isDark) {
+                    document.documentElement.removeAttribute('data-theme');
+                    try { localStorage.setItem('gym_theme', 'light'); } catch (e) {}
+                    syncButtonState(false);
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    try { localStorage.setItem('gym_theme', 'dark'); } catch (e) {}
+                    syncButtonState(true);
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

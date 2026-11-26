@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Member Attendance Calendar &mdash; Gym Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{{ url_for('attendance') }}" class="back-link">&larr; Back to Daily Attendance</a>
+        <h2 class="page-title">Member Attendance Calendar</h2>
+        <p class="page-subtitle">Inspect historical monthly attendance for individual members.</p>
+    </div>
+</div>
+
+<!-- Member Selection Card -->
+<section class="card">
+    <div class="card-header-bar">
+        <h3 class="section-title">Select Member</h3>
+        <p class="section-desc">Choose any member (Active, Expired, or Inactive) to inspect their monthly attendance history.</p>
+    </div>
+    <div class="member-select-container">
+        <form method="GET" action="{{ url_for('member_attendance') }}" class="member-calendar-form">
+            <input type="hidden" name="year" value="{{ year }}">
+            <input type="hidden" name="month" value="{{ month }}">
+            <div class="form-row">
+                <div class="form-group member-select-group">
+                    <label for="member_id" class="form-label">Member <span class="required">*</span></label>
+                    <select id="member_id" name="member_id" class="form-control" onchange="this.form.submit()">
+                        {% for m in all_members %}
+                            <option value="{{ m.id }}" {% if selected_member and selected_member.id == m.id %}selected{% endif %}>
+                                #{{ m.id }} &mdash; {{ m.name }} ({{ m.status }} &bull; {{ m.plan_name }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="member-select-btn-group">
+                    <noscript><button type="submit" class="btn btn-secondary">Load Member</button></noscript>
+                </div>
+            </div>
+        </form>
+
+        {% if selected_member %}
+            <div class="selected-member-strip">
+                <div>
+                    <strong>{{ selected_member.name }}</strong> &bull; Phone: {{ selected_member.phone }} &bull; Plan: {{ selected_member.plan_name }}
+                </div>
+                <div>
+                    Status: <span class="badge badge-{{ selected_member.status|lower }}">{{ selected_member.status }}</span>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+{% if selected_member %}
+<!-- Monthly Calendar Card -->
+<section class="card">
+    <div class="calendar-card-header">
+        <div class="calendar-nav-bar">
+            <a href="{{ url_for('member_attendance', member_id=selected_member.id, year=prev_year, month=prev_month) }}" class="btn btn-sm btn-secondary" title="View previous month">
+                &larr; Previous Month
+            </a>
+            <h3 class="calendar-month-title">{{ month_name }} {{ year }}</h3>
+            <a href="{{ url_for('member_attendance', member_id=selected_member.id, year=next_year, month=next_month) }}" class="btn btn-sm btn-secondary" title="View next month">
+                Next Month &rarr;
+            </a>
+        </div>
+
+        <div class="monthly-stat-badge">
+            Total visits recorded in {{ month_name }} {{ year }}: <strong>{{ monthly_visits }} visit{% if monthly_visits != 1 %}s{% endif %}</strong>
+        </div>
+    </div>
+
+    <!-- Calendar Table Grid -->
+    <div class="calendar-wrapper">
+        <table class="calendar-table">
+            <thead>
+                <tr>
+                    {% for h in weekday_headers %}
+                        <th>{{ h }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for week in calendar_weeks %}
+                    <tr>
+                        {% for day in week %}
+                            <td class="calendar-cell cell-{{ day.status }} {% if day.is_today %}cell-today{% endif %}">
+                                <div class="cell-inner">
+                                    <span class="cell-day-num">{{ day.day_number }}</span>
+                                    {% if day.is_current_month %}
+                                        {% if day.status == 'recorded' %}
+                                            <span class="cell-badge badge-recorded">&#10003; Visit</span>
+                                        {% elif day.is_today and day.status == 'neutral' %}
+                                            <span class="cell-badge badge-today">Today</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Calendar Legend -->
+    <div class="calendar-legend-bar">
+        <span class="legend-title">Legend:</span>
+        <div class="legend-items">
+            <span class="legend-item">
+                <span class="legend-color legend-recorded"></span>
+                <span>Visit recorded</span>
+            </span>
+            <span class="legend-item">
+                <span class="legend-color legend-no-record"></span>
+                <span>No visit recorded</span>
+            </span>
+            <span class="legend-item">
+                <span class="legend-color legend-neutral"></span>
+                <span>Future date / Current day</span>
+            </span>
+        </div>
+        <p class="legend-note">Note: Days marked "No visit recorded" indicate dates with no check-in logged on the system; they do not imply scheduled absence.</p>
+    </div>
+</section>
+{% else %}
+<section class="card">
+    <p class="empty-state-p">No members available to display calendar.</p>
+</section>
+{% endif %}
+{% endblock %}
